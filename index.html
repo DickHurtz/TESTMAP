@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>test!!!</title>
+<meta charset='utf-8' />
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.0/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.20/lodash.min.js"></script>
+
+<script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@16/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+    
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB6TgtukP6fPYMlxN6c0u3WQhAgSRzLxyU&callback=initMap"
+  defer
+></script>
+<script>
+/*const socket = io.connect("http://localhost:8080");
+showjson = () =>{
+	console.log("update");
+	socket.on("connect", (socket) => {
+		socket.emit('cars', 'Hello World.');
+		console.log("update1");
+	});
+}
+setInterval(showjson,2000);*/
+
+let cars = _.range(10).map((id) => {
+    return {
+        id,
+        name: `Car ${id}`,
+        lat: 54.375852 + _.random(0.2, true),
+        lng: 18.608110 + _.random(0.2, true),
+		display: true
+    }
+});
+let markers = [];
+let infos = [];
+addMarker =(location)=> {
+  const marker = new google.maps.Marker({
+    position: location,
+    map: map,
+  });
+  markers.push(marker);
+}
+function clearMarkers() {
+  setMapOnAll(null);
+}
+function deleteMarkers() {
+  clearMarkers();
+  markers = [];
+}
+addText =(text, marker)=>{
+  const info = new google.maps.InfoWindow({
+	content: "<p>" + text + "</p>"
+  }).open(map, marker);
+  infos.push(info);
+}
+setMapOnAll =(map)=> {
+  for (let i = 0; i < markers.length; i++) {
+    markers[i].setMap(map);
+  }
+}
+let Simulation = () => {
+	deleteMarkers();
+
+    cars = cars.map(oldCar => {
+        if (_.random(1, true) < 0.3) {
+            let updatedCar = {
+                ...oldCar,
+                lat: oldCar.lat + _.random(0.02, true),
+                lng: oldCar.lng + _.random(0.02, true),
+				//display: !oldCar.display
+            };
+            return updatedCar;
+        } else {
+			//console.log("perhaps "+oldCar.name+" driver is drunk");
+            return oldCar;
+        }
+    });
+	cars.forEach(element => {
+		if(element.display){
+			addMarker({lat: element.lat, lng: element.lng});
+			addText(element.name, markers[element.id]);
+		}
+	});
+};
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 54.375852, lng: 18.608110 },
+    zoom: 10,
+  });
+
+	setInterval(Simulation, 1000); //FASTA
+  
+};
+
+</script>
+<style>
+body *{
+	box-sizing: border-box;
+}
+body{
+margin:auto;
+}
+.lets-flex{
+display:flex;
+height: 100vh;
+}
+.lets-flex > div{
+	width:35%;
+}
+.lets-flex > .cont{
+	width:65%;
+	height: 100%;
+	position:relative;
+}
+.list{
+	margin:0;
+	padding: 5px;
+	font-size:0;
+}
+.list li{
+	width:50%;
+	display:inline-block;
+	font-size:initial;
+	border-bottom: 1px solid rgba(0,100,100,0.1);
+}
+/*.list li:nth-of-type(even){
+	background-color:rgba(0,100,100,0.1);
+}*/
+.list p{
+	margin:0;
+	padding:5px;
+}
+#Filter{
+	position:absolute;
+	top:0;
+	left:0;
+	width:auto;
+	z-index:10000;
+	background:#fff;
+	padding: 10px;
+}
+#map{
+	height:100%;
+}
+</style>
+</head>
+<body>
+<div class="lets-flex">
+	<div id="List"></div>
+	<div class="cont">
+		<div id="Filter"></div>
+		<div id="map"></div>
+	</div>
+</div>
+<script type="text/babel">
+	class FilterALL extends React.Component{
+		handleCheckbox = (e) => {
+			cars = cars.map(oldCar => {
+				let updatedCar = {
+					...oldCar,
+					display: !oldCar.display
+				};
+				return updatedCar;
+			});
+		}
+		render(){
+			return(
+			<form className="filterall">
+				<label>
+					<input
+					type="checkbox"
+					onClick={this.handleCheckbox}
+					/>
+					HIDE ALL
+				</label>
+			</form>
+			)
+		}
+	}
+	class ListSimulation extends React.Component{
+		render(){
+			return(
+			<ul className="list">
+				{cars.map((item) => (
+					<li key={item.id}><p>{item.name}</p><p>x:{item.lat}</p><p>y:{item.lng}</p></li>
+				))}
+			</ul>
+			)
+		}
+	}
+	setInterval(function(){
+		
+	ReactDOM.render(<ListSimulation />, document.getElementById('List'))
+	},1000);
+	ReactDOM.render(<FilterALL />, document.getElementById('Filter'))
+</script>
+</body>
+</html>
